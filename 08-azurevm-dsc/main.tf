@@ -129,52 +129,47 @@ resource "azurerm_virtual_machine" "virtual_machine" {
     created_by = "terraform"
   }
 }
+
 resource "azurerm_virtual_machine_extension" "dsc" {
-    name = "DevOpsDSC"
-    location = "${data.azurerm_resource_group.rg.location}"
-    resource_group_name = "${data.azurerm_resource_group.rg.name}"
-    virtual_machine_name = "${var.vm_name}"
-    publisher = "Microsoft.Powershell"
-    type = "DSC"
-    type_handler_version = "2.73"
-    depends_on = ["azurerm_virtual_machine.virtual_machine"]
-    settings = <<SETTINGS
+  name                 = "DevOpsDSC"
+  location = "${data.azurerm_resource_group.rg.location}"
+  resource_group_name = "${data.azurerm_resource_group.rg.name}"
+  virtual_machine_name = "${var.vm_name}"
+  publisher            = "Microsoft.Powershell"
+  type                 = "DSC"
+  type_handler_version = "2.74"
+  depends_on           = ["azurerm_virtual_machine.virtual_machine"]
+
+  settings = <<SETTINGS
         {
-            "ModulesUrl":"",
-            "SasToken":"",
             "WmfVersion": "latest",
+            "ModulesUrl": "https://eus2oaasibizamarketprod1.blob.core.windows.net/automationdscpreview/RegistrationMetaConfigV2.zip",
+            "ConfigurationFunction": "RegistrationMetaConfigV2.ps1\\RegistrationMetaConfigV2",
             "Privacy": {
                 "DataCollection": ""
             },
-            "ConfigurationFunction":""
+            "Properties": {
+                "RegistrationKey": {
+                  "UserName": "PLACEHOLDER_DONOTUSE",
+                  "Password": "PrivateSettingsRef:registrationKeyPrivate"
+                },
+                "RegistrationUrl": "${var.dsc_endpoint}",
+                "NodeConfigurationName": "${var.dsc_config}",
+                "ConfigurationMode": "${var.dsc_mode}",
+                "ConfigurationModeFrequencyMins": 15,
+                "RefreshFrequencyMins": 30,
+                "RebootNodeIfNeeded": false,
+                "ActionAfterReboot": "continueConfiguration",
+                "AllowModuleOverwrite": false
+            }
         }
     SETTINGS
-}
-
-resource "azurerm_virtual_machine_extension" "register_for_dsc" {
-    name = "register_for_dsc"
-    location = "${data.azurerm_resource_group.rg.location}"
-    resource_group_name = "${data.azurerm_resource_group.rg.name}"
-    virtual_machine_name = "${var.vm_name}"
-    publisher = "Microsoft.Compute"
-    type = "CustomScriptExtension"
-    type_handler_version = "1.8"
-    depends_on = ["azurerm_virtual_machine_extension.dsc"]
-
-  settings = <<SETTINGS
-    {
-        "fileUris": [
-          "https://kewalakanz.blob.core.windows.net/scripts/DscMetaConfigs.ps1",
-          "https://kewalakanz.blob.core.windows.net/scripts/Execute_DscScripts.ps1"
-        ]
-    }
-SETTINGS
 
   protected_settings = <<PROTECTED_SETTINGS
     {
-      "commandToExecute": "powershell.exe -File ./Execute_DscScripts.ps1 ${var.dsc_key} ${var.dsc_endpoint}",
-      "storageAccountName": "${var.storageAccountName}",
-      "storageAccountKey": "${var.storageAccountKey}"
+      "Items": {
+        "registrationKeyPrivate" : "${var.dsc_key}"
+      }
     }
 PROTECTED_SETTINGS
 }
