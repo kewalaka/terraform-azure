@@ -54,7 +54,7 @@ variable "storageAccountKey" {
 }
 
 variable dsc_config {
-  default = "node_configuration_you_want_applied__can_leave_blank"
+  default = ""
 }
 variable dsc_mode {
   default = "applyAndMonitor"
