@@ -1,26 +1,3 @@
-variable "resourcegroup" {
-  default = "kewalaka"
-}
-variable "vm_name" {
-  description = "What is the name of the server you want to create"
-  default = "ashcazd-hms-002"
-}
-variable "location" {
-  default = "East US"
-}
-variable "admin_username" {
-  default = "devops"
-}
-variable "admin_password" {
-  default = "---------"
-}
-variable "dsc_key" {
-  default = "[your_azure_automation_access_key]"
-}
-variable "dsc_endpoint" {
-  default = "[azure_automation_url]"
-}
-
 # Azure subscription
 variable "ARM_SUBSCRIPTION_ID" { description = "The Azure subscription ID"  } 
 variable "ARM_TENANT_ID"       { description = "The Azure tenant ID" }
@@ -50,12 +27,36 @@ variable "tags" {
 }
 
 variable "storage_account" {
-  type = "map"  
-  default = {
-    name = "kewalakanz"
-    tier = "Standard"   # Valid options are Standard, Premium
-    replicationtype = "LRS"   # Valid options are LRS, GRS, RAGRS and ZRS.
-  }
+    description = "Storage account to use for the scripts"
+    default = "kewalakanz"
 }
 
-variable "kewalakapassword" {}
+variable "vm_name" {
+  description = "What is the name of the server you want to create"
+  default = "ashcazd-hms-002"
+}
+variable "admin_username" {
+  default = "devops"
+}
+variable "admin_password" {
+}
+
+variable "dsc_key" {
+}
+
+variable "dsc_endpoint" {
+}
+
+variable "storageAccountName" {
+}
+
+variable "storageAccountKey" {
+}
+
+variable dsc_config {
+  default = "node_configuration_you_want_applied__can_leave_blank"
+}
+variable dsc_mode {
+  default = "applyAndMonitor"
+}
+

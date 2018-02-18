@@ -15,7 +15,7 @@ data "azurerm_resource_group" "rg" {
 # Networking
 resource "azurerm_virtual_network" "operationalvnet" {
   name                = "${data.azurerm_resource_group.rg.name}operationalvnet"
-  location            = "${var.location}"
+  location            = "${data.azurerm_resource_group.rg.location}"
   address_space       = ["10.0.0.0/16"]
   resource_group_name = "${data.azurerm_resource_group.rg.name}"
 }
@@ -25,18 +25,6 @@ resource "azurerm_subnet" "datasubnet" {
   virtual_network_name = "${azurerm_virtual_network.operationalvnet.name}"
   resource_group_name  = "${data.azurerm_resource_group.rg.name}"
   address_prefix       = "10.0.3.0/24"
-}
-
-resource "azurerm_network_interface" "nic" {
-  name                = "${var.vm_name}-nic"
-  location            = "${var.location}"
-  resource_group_name = "${var.resourcegroup}"
-
-  ip_configuration {
-    name                          = "${var.vm_name}-ipconfig"
-    subnet_id = "${azurerm_subnet.datasubnet.id}"
-    private_ip_address_allocation = "dynamic"
-  }
 }
 
 # Automation
@@ -56,20 +44,58 @@ resource "azurerm_automation_account" "automation" {
   }
 }
 
+resource "azurerm_storage_container" "scripts" {
+  name                  = "scripts"
+  resource_group_name   = "${data.azurerm_resource_group.rg.name}"
+  storage_account_name  = "${var.storage_account}"
+  container_access_type = "private"
+}
+
+resource "azurerm_storage_blob" "DscMetaConfigs" {
+  name = "DscMetaConfigs.ps1"
+  source = "${path.module}\\scripts\\DscMetaConfigs.ps1"
+  resource_group_name   = "${data.azurerm_resource_group.rg.name}"
+  storage_account_name  = "${var.storage_account}"
+  storage_container_name = "${azurerm_storage_container.scripts.name}"
+  type = "Block"
+}
+
+resource "azurerm_storage_blob" "Execute_DscScripts" {
+  name = "Execute_DscScripts.ps1"
+  source = "${path.module}\\scripts\\Execute_DscScripts.ps1"
+  resource_group_name   = "${data.azurerm_resource_group.rg.name}"
+  storage_account_name  = "${var.storage_account}"
+  storage_container_name = "${azurerm_storage_container.scripts.name}"
+  type = "Block"    
+}
+
+
 
 # The virtual machine
+resource "azurerm_network_interface" "nic" {
+  name                = "${var.vm_name}-nic"
+  location            = "${data.azurerm_resource_group.rg.location}"
+  resource_group_name = "${data.azurerm_resource_group.rg.name}"
+
+  ip_configuration {
+    name                          = "${var.vm_name}-ipconfig"
+    subnet_id = "${azurerm_subnet.datasubnet.id}"
+    private_ip_address_allocation = "dynamic"
+  }
+}
+
 resource "azurerm_virtual_machine" "virtual_machine" {
   name                = "${var.vm_name}"
-  location            = "${var.location}"
-  resource_group_name = "${var.resourcegroup}"
+  location            = "${data.azurerm_resource_group.rg.location}"
+  resource_group_name = "${data.azurerm_resource_group.rg.name}"
   network_interface_ids = ["${azurerm_network_interface.nic.id}"]
-  vm_size               = "Standard_D2s_v3"
+  vm_size               = "Standard_DS1_v2"
   license_type          = "Windows_Server"
 
   storage_image_reference {
     publisher = "MicrosoftWindowsServer"
     offer     = "WindowsServer"
-    sku       = "2012-R2-Datacenter"
+    sku       = "2016-Datacenter"
     version   = "latest"
   }
 
@@ -105,8 +131,8 @@ resource "azurerm_virtual_machine" "virtual_machine" {
 }
 resource "azurerm_virtual_machine_extension" "dsc" {
     name = "DevOpsDSC"
-    location = "${var.location}"
-    resource_group_name = "${var.resourcegroup}"
+    location = "${data.azurerm_resource_group.rg.location}"
+    resource_group_name = "${data.azurerm_resource_group.rg.name}"
     virtual_machine_name = "${var.vm_name}"
     publisher = "Microsoft.Powershell"
     type = "DSC"
@@ -127,8 +153,8 @@ resource "azurerm_virtual_machine_extension" "dsc" {
 
 resource "azurerm_virtual_machine_extension" "register_for_dsc" {
     name = "register_for_dsc"
-    location = "${var.location}"
-    resource_group_name = "${var.resourcegroup}"
+    location = "${data.azurerm_resource_group.rg.location}"
+    resource_group_name = "${data.azurerm_resource_group.rg.name}"
     virtual_machine_name = "${var.vm_name}"
     publisher = "Microsoft.Compute"
     type = "CustomScriptExtension"
@@ -138,8 +164,8 @@ resource "azurerm_virtual_machine_extension" "register_for_dsc" {
   settings = <<SETTINGS
     {
         "fileUris": [
-          "https://[storage_account_name].blob.core.windows.net/scripts/DscMetaConfigs.ps1",
-          "https://[storage_account_name].blob.core.windows.net/scripts/Execute_DscScripts.ps1"
+          "https://kewalakanz.blob.core.windows.net/scripts/DscMetaConfigs.ps1",
+          "https://kewalakanz.blob.core.windows.net/scripts/Execute_DscScripts.ps1"
         ]
     }
 SETTINGS
@@ -147,8 +173,8 @@ SETTINGS
   protected_settings = <<PROTECTED_SETTINGS
     {
       "commandToExecute": "powershell.exe -File ./Execute_DscScripts.ps1 ${var.dsc_key} ${var.dsc_endpoint}",
-      "storageAccountName": "[storage_account_name]",
-      "storageAccountKey": "[storage_account_access_key]"
+      "storageAccountName": "${var.storageAccountName}",
+      "storageAccountKey": "${var.storageAccountKey}"
     }
 PROTECTED_SETTINGS
 }

@@ -24,7 +24,14 @@ variable "resource_group_site1" {
 
 variable "location_site1" {
   description = "The location/region where the resource is created. Changing this forces a new resource to be created."
-  default     = "southeastasia" #"australiasoutheast"
+  default     = "southeastasia"
 }
 
-
+variable "storage_account" {
+  type = "map"  
+  default = {
+    name = "kewalakanz"
+    tier = "Standard"   # Valid options are Standard, Premium
+    replicationtype = "LRS"   # Valid options are LRS, GRS, RAGRS and ZRS.
+  }
+}

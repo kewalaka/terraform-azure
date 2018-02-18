@@ -19,7 +19,7 @@ variable "ARM_CLIENT_SECRET" {
 # resource group & location
 variable "resource_group_site1" {
   description = "The name of the resource group to use"
-  default     = "kewalaka"
+  default     = "kewalaka_ms_site1"
 }
 
 variable "location_site1" {

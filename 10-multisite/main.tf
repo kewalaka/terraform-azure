@@ -21,6 +21,15 @@ resource "azurerm_resource_group" "rg" {
   tags {
     createdby = "terraform"
   }
+}
+
+# an example resource
+resource "azurerm_resource_group" "rg" {
+  name     = "${var.resource_group_site1}"
+  location = "${var.location_site1}"
+  tags {
+    createdby = "terraform"
+  }
   lifecycle {
     prevent_destroy = true
   }  

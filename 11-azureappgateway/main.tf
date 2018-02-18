@@ -16,12 +16,24 @@ provider "azurerm" {
 
 # an example resource
 resource "azurerm_resource_group" "rg" {
-  name     = "${var.resource_group_site1}"
-  location = "${var.location_site1}"
+  name     = "${var.resource_group}"
+  location = "${var.location-site1}"
   tags {
     createdby = "terraform"
   }
-  lifecycle {
-    prevent_destroy = true
-  }  
+
 }
+
+resource "azurerm_storage_account" "sa" {
+  name     = "${var.storage_account["name"]}"
+  resource_group_name = "${azurerm_resource_group.rg.name}"
+  location = "${azurerm_resource_group.rg.location}"
+  account_tier = "${var.storage_account["tier"]}"
+  account_replication_type = "${var.storage_account["replicationtype"]}"
+  enable_blob_encryption = true
+  enable_file_encryption = true
+  enable_https_traffic_only = true
+}
+
+
+
