@@ -130,6 +130,7 @@ resource "azurerm_virtual_machine" "virtual_machine" {
   }
 }
 
+# based on https://medium.com/modern-stack/bootstrap-a-vm-to-azure-automation-dsc-using-terraform-f2ba41d25cd2
 resource "azurerm_virtual_machine_extension" "dsc" {
   name                 = "DevOpsDSC"
   location = "${data.azurerm_resource_group.rg.location}"
